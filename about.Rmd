@@ -1,0 +1,40 @@
+---
+output: 
+  html_document
+---
+<br/>
+__Please find my detailed experience from my [CV](https://drive.google.com/open?id=1TdwDFqwtJ6e2yHveuoGrH_REyNSIKnBd)__
+
+## EDUCATION
+
+### Teachers College, Columbia University
+
+_Clinical Psychology M.A. student, Psych in Ed Ambassador, GPA: 4.0/4.0_
+
+- Relevant Coursework: Research Methods in Clinical Psychology; Child Psychopathology (Ph.D. level); Adult Psychopathology; Applied Regression Analysis; Probability and Statistical Inference; Data Science in R; LGBTQ Issues
+
+### National Taiwan University
+
+_B.A. in Economics_
+
+- Relevant Coursework: Statistics I, II, Introductory Psychology
+
+### Stanford University
+
+_Exchange Student_
+
+- Thesis topic: Attitudes towards Same-Sex Marriage in Silicon Valley	
+
+## Research experience
+
+### Columbia Psychiatry | New York State Psychiatric Institute
+### Division of Gender, Sexuality, & Health
+
+_Research Intern, Program for the Study of LGBT Health, Project AFFIRM_
+
+- Conducting independent research and attending monthly meetings to contribute to research discussions with doctoral students, post-doc researchers, and principal investigators
+- Co-authoring ongoing manuscripts and discussing findings with other researchers at monthly meetings
+- Performing statistical analysis with SPSS including interpretation of results
+- Conducting literature reviews and writing manuscripts for journal submission
+- Analyzing qualitative transcripts using content analysis on Dedoose
+- Presenting papers of transgender mental health to monthly journal club along with doctoral and post-doc researchers

@@ -1,0 +1,18 @@
+---
+output: html_document
+---
+<br/>
+
+# Hi, I am Ya-Wen Chang
+
+## Welcome to my personal website!
+
+![](image/friends.png)
+
+### Biography
+
+I am a second-year clinical psychology M.A. student at Teachers College, Columbia University. I currently work with Dr. Walter Bockting at New York State Psychiatry Institute, Columbia Psychiatry to examine the relationship between childhood gender role nonconformity and identity development among transgender individuals. Before studying in the U.S., I have pursued a post-baccalaureate position as a clinical research coordinator at the Lab of Clinical and Translational Studies (LCTS) at Taipei City Hospital and Psychiatry Center. Her primary research interests are: (a) identifying the psychological and social influences that might explain LGBT individuals’ mental health disparities (b) exploring the adverse experience during developmental process that might lead to child internalizing disorder among LGBT youth (c) translating the results of these studies into targetable and scalable interventions to improve the health of the LGBT individuals.
+
+### CV
+
+Please find my CV [here](about.html)

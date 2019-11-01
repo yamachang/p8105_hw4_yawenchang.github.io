@@ -1,0 +1,20 @@
+name: "Menu"
+output_dir: "."
+navbar:
+  title: "Menu"
+  right:
+    - text: "About me"
+      href: about.html
+    - text: "CV"
+      href: https://drive.google.com/open?id=1TdwDFqwtJ6e2yHveuoGrH_REyNSIKnBd
+    - icon: fa-envelope fa-lg
+      href: mailto:<yc3508@tc.columbia.edu>
+    - icon: fab fa-linkedin
+      href: https://www.linkedin.com/in/yama-yw-chang/
+    - icon: fa-github fa-lg
+      href: http://github.com/yamachang/
+    - icon: fab fa-twitter
+      href: https://twitter.com/yama_yawenchang
+output:
+  html_document:
+    theme: flatly
