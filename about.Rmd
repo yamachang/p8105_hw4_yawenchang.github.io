@@ -5,7 +5,7 @@ output:
 <br/>
 __Please find my detailed experience from my [CV](https://drive.google.com/open?id=1TdwDFqwtJ6e2yHveuoGrH_REyNSIKnBd)__
 
-## EDUCATION
+### EDUCATION
 
 ### Teachers College, Columbia University
 
@@ -25,7 +25,7 @@ _Exchange Student_
 
 - Thesis topic: Attitudes towards Same-Sex Marriage in Silicon Valley	
 
-## Research experience
+### Research experience
 
 ### Columbia Psychiatry | New York State Psychiatric Institute
 ### Division of Gender, Sexuality, & Health

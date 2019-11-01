@@ -1,12 +1,12 @@
 ---
-title: "Dashboard"
+title: "P8105 Dashboard"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
 ---
 
-```{r,message=FALSE}
+```{r setup, include=FALSE}
 library(flexdashboard)
 library(tidyverse)
 library(viridis)
@@ -18,8 +18,6 @@ library("plotrix")
 ```
 
 ```{r}
-set.seed(1)
-
 get_all_inspections = function(url) {
   
   all_inspections = vector("list", length = 0)
@@ -49,13 +47,9 @@ get_all_inspections = function(url) {
   all_inspections
   
 }
-
 url = "https://data.cityofnewyork.us/resource/43nn-pn8j.json"
-
 nyc_inspections = get_all_inspections(url) %>%
   bind_rows() 
-
-
 ```
 
 Column {data-width=650}
@@ -71,26 +65,75 @@ mean_score_manhattan = nyc_inspections %>%
          cuisine_description = recode(cuisine_description, `Latin (Cuban, Dominican, Puerto Rican, South & Central American)` = 'Latin')) %>% 
   rename(cuisine = cuisine_description) %>% 
   filter(boro == "Manhattan", !is.na(score), score != 0) %>% 
-  mutate(sd = sd(score)) %>% 
-  group_by(cuisine, sd) %>% 
+  mutate(se = std.error(score)) %>% 
+  group_by(cuisine, se) %>% 
   summarise(mean_score = mean(score)) %>%
   mutate(
-    se_min = mean_score - sd,
-    se_max = mean_score + sd) %>% 
+    se_min = mean_score - se,
+    se_max = mean_score + se) %>% 
   arrange(desc(mean_score)) %>% 
   head(20)
 
 Plot_A = mean_score_manhattan %>% 
-  ggplot(aes(x = reorder(cuisine, mean_score), y = mean_score, fill = cuisine)) + 
-  geom_bar(stat="identity") +  
+  ggplot(aes(x = reorder(cuisine, mean_score), y = mean_score, color = cuisine)) + 
+  geom_point() + geom_errorbar(aes(ymin = se_min, ymax = se_max)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position="right") +
   labs(
     title = "Top 20 cuisine in Manhattan",
     x = "Cuisine",
     y = "Average Score"
-  ) 
+  )
 
 ggplotly(Plot_A)
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+## Examine count of different grades in each boro
+## Clean missing value of boro and grade
+
+Plot_B = nyc_inspections %>% 
+  filter(boro != "0", !is.na(grade)) %>% 
+  group_by(boro, grade) %>% 
+  summarise(n = n()) %>% 
+  ggplot(aes(x = grade, y = n)) +
+  geom_bar(aes(fill = boro), stat="identity", colour="black") +
+  theme(axis.text.x = element_text(hjust = 1), legend.position="right") + 
+  facet_wrap(~boro, nrow = 1) + 
+  theme(legend.position = "none") + 
+  ggtitle("The distribution of grades in each section")
+
+ggplotly(Plot_B)
+```
+
+### Chart C
+
+```{r}
+## Examine mean score for each boro over time
+## Clean missing value first
+
+Plot_C = nyc_inspections %>% 
+  filter(boro != "0", !is.na(score)) %>% 
+  mutate(
+    score = as.numeric(score),
+    year = substr(as.character(inspection_date), 1, 4)
+    ) %>% 
+  group_by(year, boro) %>% 
+  summarise(mean_boro = mean(score)) %>% 
+  ggplot(aes(x = year, y = mean_boro, colour = boro, group = boro)) +
+  geom_point() + 
+  geom_line(size=.5) +
+  labs(
+    title = "Trend of average score for each boro",
+    x = "Year",
+    y = "Average Score"
+  )
+
+ggplotly(Plot_C)
 ```
 
