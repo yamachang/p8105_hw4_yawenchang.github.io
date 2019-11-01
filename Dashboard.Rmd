@@ -5,3 +5,92 @@ output:
     orientation: columns
     vertical_layout: fill
 ---
+
+```{r,message=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(viridis)
+library(p8105.datasets)
+library(httr)
+library(jsonlite)
+library(plotly)
+library("plotrix") 
+```
+
+```{r}
+set.seed(1)
+
+get_all_inspections = function(url) {
+  
+  all_inspections = vector("list", length = 0)
+  
+  loop_index = 1
+  chunk_size = 50000
+  DO_NEXT = TRUE
+  
+  while (DO_NEXT) {
+    message("Getting data, page ", loop_index)
+    
+    all_inspections[[loop_index]] = 
+      GET(url,
+          query = list(`$order` = "zipcode",
+                       `$limit` = chunk_size,
+                       `$offset` = as.integer((loop_index - 1) * chunk_size)
+                       )
+          ) %>%
+      content("text") %>%
+      fromJSON() %>%
+      as_tibble()
+    
+    DO_NEXT = dim(all_inspections[[loop_index]])[1] == chunk_size
+    loop_index = loop_index + 1
+  }
+  
+  all_inspections
+  
+}
+
+url = "https://data.cityofnewyork.us/resource/43nn-pn8j.json"
+
+nyc_inspections = get_all_inspections(url) %>%
+  bind_rows() 
+
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+## Examine top 20 cuisine based on average score in Manhattan
+## Clean missing data and score 0 
+mean_score_manhattan = nyc_inspections %>% 
+  mutate(score = as.numeric(score),
+         cuisine_description = recode(cuisine_description, `Latin (Cuban, Dominican, Puerto Rican, South & Central American)` = 'Latin')) %>% 
+  rename(cuisine = cuisine_description) %>% 
+  filter(boro == "Manhattan", !is.na(score), score != 0) %>% 
+  mutate(sd = sd(score)) %>% 
+  group_by(cuisine, sd) %>% 
+  summarise(mean_score = mean(score)) %>%
+  mutate(
+    se_min = mean_score - sd,
+    se_max = mean_score + sd) %>% 
+  arrange(desc(mean_score)) %>% 
+  head(20)
+
+Plot_A = mean_score_manhattan %>% 
+  ggplot(aes(x = reorder(cuisine, mean_score), y = mean_score, fill = cuisine)) + 
+  geom_bar(stat="identity") +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position="right") +
+  labs(
+    title = "Top 20 cuisine in Manhattan",
+    x = "Cuisine",
+    y = "Average Score"
+  ) 
+
+ggplotly(Plot_A)
+```
+

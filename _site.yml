@@ -15,6 +15,8 @@ navbar:
       href: http://github.com/yamachang/
     - icon: fab fa-twitter
       href: https://twitter.com/yama_yawenchang
+    - text: "Dashboard"
+      href: Dashboard.html
 output:
   html_document:
     theme: flatly

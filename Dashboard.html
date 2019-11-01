@@ -23,6 +23,13 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.3/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.9.0/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.46.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.46.1/plotly-latest.min.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -306,6 +313,9 @@ $(document).ready(function () {
      
   </a>
 </li>
+<li>
+  <a href="Dashboard.html">Dashboard</a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -320,7 +330,96 @@ $(document).ready(function () {
 </div>
 
 
+<pre class="r"><code>library(flexdashboard)
+library(tidyverse)
+library(viridis)
+library(p8105.datasets)
+library(httr)
+library(jsonlite)
+library(plotly)
+library(&quot;plotrix&quot;) </code></pre>
+<pre class="r"><code>set.seed(1)
 
+get_all_inspections = function(url) {
+  
+  all_inspections = vector(&quot;list&quot;, length = 0)
+  
+  loop_index = 1
+  chunk_size = 50000
+  DO_NEXT = TRUE
+  
+  while (DO_NEXT) {
+    message(&quot;Getting data, page &quot;, loop_index)
+    
+    all_inspections[[loop_index]] = 
+      GET(url,
+          query = list(`$order` = &quot;zipcode&quot;,
+                       `$limit` = chunk_size,
+                       `$offset` = as.integer((loop_index - 1) * chunk_size)
+                       )
+          ) %&gt;%
+      content(&quot;text&quot;) %&gt;%
+      fromJSON() %&gt;%
+      as_tibble()
+    
+    DO_NEXT = dim(all_inspections[[loop_index]])[1] == chunk_size
+    loop_index = loop_index + 1
+  }
+  
+  all_inspections
+  
+}
+
+url = &quot;https://data.cityofnewyork.us/resource/43nn-pn8j.json&quot;
+
+nyc_inspections = get_all_inspections(url) %&gt;%
+  bind_rows() </code></pre>
+<pre><code>## Getting data, page 1</code></pre>
+<pre><code>## Getting data, page 2</code></pre>
+<pre><code>## Getting data, page 3</code></pre>
+<pre><code>## Getting data, page 4</code></pre>
+<pre><code>## Getting data, page 5</code></pre>
+<pre><code>## Getting data, page 6</code></pre>
+<pre><code>## Getting data, page 7</code></pre>
+<pre><code>## Getting data, page 8</code></pre>
+<div id="column" class="section level2" data-width="650">
+<h2>Column</h2>
+<div id="chart-a" class="section level3">
+<h3>Chart A</h3>
+<pre class="r"><code>## Examine top 20 cuisine based on average score in Manhattan
+## Clean missing data and score 0 
+mean_score_manhattan = nyc_inspections %&gt;% 
+  mutate(score = as.numeric(score),
+         cuisine_description = recode(cuisine_description, `Latin (Cuban, Dominican, Puerto Rican, South &amp; Central American)` = &#39;Latin&#39;)) %&gt;% 
+  rename(cuisine = cuisine_description) %&gt;% 
+  filter(boro == &quot;Manhattan&quot;, !is.na(score), score != 0) %&gt;% 
+  mutate(sd = sd(score)) %&gt;% 
+  group_by(cuisine, sd) %&gt;% 
+  summarise(mean_score = mean(score)) %&gt;%
+  mutate(
+    se_min = mean_score - sd,
+    se_max = mean_score + sd) %&gt;% 
+  arrange(desc(mean_score)) %&gt;% 
+  head(20)
+
+Plot_A = mean_score_manhattan %&gt;% 
+  ggplot(aes(x = reorder(cuisine, mean_score), y = mean_score, fill = cuisine)) + 
+  geom_bar(stat=&quot;identity&quot;) +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position=&quot;right&quot;) +
+  labs(
+    title = &quot;Top 20 cuisine in Manhattan&quot;,
+    x = &quot;Cuisine&quot;,
+    y = &quot;Average Score&quot;
+  ) 
+
+ggplotly(Plot_A)</code></pre>
+<pre><code>## This version of Shiny is designed to work with &#39;htmlwidgets&#39; &gt;= 1.5.
+##     Please upgrade via install.packages(&#39;htmlwidgets&#39;).</code></pre>
+<div id="htmlwidget-f843a680a1fcd62a0dd1" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-f843a680a1fcd62a0dd1">{"x":{"data":[{"orientation":"v","width":0.899999999999999,"base":0,"x":[18],"y":[26.2776659959759],"text":"reorder(cuisine, mean_score): African<br />mean_score: 26.27767<br />cuisine: African","type":"bar","marker":{"autocolorscale":false,"color":"rgba(248,118,109,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"African","legendgroup":"African","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[5],"y":[22.6090056285178],"text":"reorder(cuisine, mean_score): Asian<br />mean_score: 22.60901<br />cuisine: Asian","type":"bar","marker":{"autocolorscale":false,"color":"rgba(234,131,49,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Asian","legendgroup":"Asian","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[16],"y":[25.2755905511811],"text":"reorder(cuisine, mean_score): Bangladeshi<br />mean_score: 25.27559<br />cuisine: Bangladeshi","type":"bar","marker":{"autocolorscale":false,"color":"rgba(216,144,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Bangladeshi","legendgroup":"Bangladeshi","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[19],"y":[26.6126943005181],"text":"reorder(cuisine, mean_score): Caribbean<br />mean_score: 26.61269<br />cuisine: Caribbean","type":"bar","marker":{"autocolorscale":false,"color":"rgba(192,155,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Caribbean","legendgroup":"Caribbean","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[15],"y":[25.1056918359525],"text":"reorder(cuisine, mean_score): Chinese<br />mean_score: 25.10569<br />cuisine: Chinese","type":"bar","marker":{"autocolorscale":false,"color":"rgba(163,165,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Chinese","legendgroup":"Chinese","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[6],"y":[22.6440677966102],"text":"reorder(cuisine, mean_score): Chinese/Cuban<br />mean_score: 22.64407<br />cuisine: Chinese/Cuban","type":"bar","marker":{"autocolorscale":false,"color":"rgba(124,174,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Chinese/Cuban","legendgroup":"Chinese/Cuban","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[12],"y":[24.3526170798898],"text":"reorder(cuisine, mean_score): Chinese/Japanese<br />mean_score: 24.35262<br />cuisine: Chinese/Japanese","type":"bar","marker":{"autocolorscale":false,"color":"rgba(57,182,0,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Chinese/Japanese","legendgroup":"Chinese/Japanese","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[17],"y":[25.7314846127832],"text":"reorder(cuisine, mean_score): Delicatessen<br />mean_score: 25.73148<br />cuisine: Delicatessen","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,187,78,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Delicatessen","legendgroup":"Delicatessen","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[1],"y":[21.816091954023],"text":"reorder(cuisine, mean_score): Ethiopian<br />mean_score: 21.81609<br />cuisine: Ethiopian","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,191,125,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Ethiopian","legendgroup":"Ethiopian","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[7],"y":[22.6936416184971],"text":"reorder(cuisine, mean_score): Filipino<br />mean_score: 22.69364<br />cuisine: Filipino","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,193,163,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Filipino","legendgroup":"Filipino","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[8],"y":[23.1375],"text":"reorder(cuisine, mean_score): Indian<br />mean_score: 23.13750<br />cuisine: Indian","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,191,196,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Indian","legendgroup":"Indian","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[2],"y":[21.8461538461538],"text":"reorder(cuisine, mean_score): Iranian<br />mean_score: 21.84615<br />cuisine: Iranian","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,186,224,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Iranian","legendgroup":"Iranian","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[4],"y":[22.5887096774194],"text":"reorder(cuisine, mean_score): Korean<br />mean_score: 22.58871<br />cuisine: Korean","type":"bar","marker":{"autocolorscale":false,"color":"rgba(0,176,246,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Korean","legendgroup":"Korean","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[10],"y":[23.4929319371728],"text":"reorder(cuisine, mean_score): Latin<br />mean_score: 23.49293<br />cuisine: Latin","type":"bar","marker":{"autocolorscale":false,"color":"rgba(53,162,255,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Latin","legendgroup":"Latin","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[14],"y":[24.9746835443038],"text":"reorder(cuisine, mean_score): Pakistani<br />mean_score: 24.97468<br />cuisine: Pakistani","type":"bar","marker":{"autocolorscale":false,"color":"rgba(149,144,255,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Pakistani","legendgroup":"Pakistani","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[20],"y":[27.8436363636364],"text":"reorder(cuisine, mean_score): Peruvian<br />mean_score: 27.84364<br />cuisine: Peruvian","type":"bar","marker":{"autocolorscale":false,"color":"rgba(199,124,255,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Peruvian","legendgroup":"Peruvian","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.9,"base":0,"x":[3],"y":[21.938864628821],"text":"reorder(cuisine, mean_score): Soul Food<br />mean_score: 21.93886<br />cuisine: Soul Food","type":"bar","marker":{"autocolorscale":false,"color":"rgba(231,107,243,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Soul Food","legendgroup":"Soul Food","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[11],"y":[24.0633965756594],"text":"reorder(cuisine, mean_score): Spanish<br />mean_score: 24.06340<br />cuisine: Spanish","type":"bar","marker":{"autocolorscale":false,"color":"rgba(250,98,219,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Spanish","legendgroup":"Spanish","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[9],"y":[23.1649081672528],"text":"reorder(cuisine, mean_score): Thai<br />mean_score: 23.16491<br />cuisine: Thai","type":"bar","marker":{"autocolorscale":false,"color":"rgba(255,98,188,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Thai","legendgroup":"Thai","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"orientation":"v","width":0.899999999999999,"base":0,"x":[13],"y":[24.7711771177118],"text":"reorder(cuisine, mean_score): Vietnamese/Cambodian/Malaysia<br />mean_score: 24.77118<br />cuisine: Vietnamese/Cambodian/Malaysia","type":"bar","marker":{"autocolorscale":false,"color":"rgba(255,106,152,1)","line":{"width":1.88976377952756,"color":"transparent"}},"name":"Vietnamese/Cambodian/Malaysia","legendgroup":"Vietnamese/Cambodian/Malaysia","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":117.745527244179,"l":37.2602739726027},"plot_bgcolor":"rgba(235,235,235,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Top 20 cuisine in Manhattan","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.4,20.6],"tickmode":"array","ticktext":["Ethiopian","Iranian","Soul Food","Korean","Asian","Chinese/Cuban","Filipino","Indian","Thai","Latin","Spanish","Chinese/Japanese","Vietnamese/Cambodian/Malaysia","Pakistani","Chinese","Bangladeshi","Delicatessen","African","Caribbean","Peruvian"],"tickvals":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],"categoryorder":"array","categoryarray":["Ethiopian","Iranian","Soul Food","Korean","Asian","Chinese/Cuban","Filipino","Indian","Thai","Latin","Spanish","Chinese/Japanese","Vietnamese/Cambodian/Malaysia","Pakistani","Chinese","Bangladeshi","Delicatessen","African","Caribbean","Peruvian"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-45,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Cuisine","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-1.39218181818182,29.2358181818182],"tickmode":"array","ticktext":["0","10","20"],"tickvals":[0,10,20],"categoryorder":"array","categoryarray":["0","10","20"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(255,255,255,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Average Score","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":true,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895},"y":0.913385826771654},"annotations":[{"text":"cuisine","x":1.02,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"left","yanchor":"bottom","legendTitle":true}],"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","showSendToCloud":false},"source":"A","attrs":{"52a722e1f021":{"x":{},"y":{},"fill":{},"type":"bar"}},"cur_data":"52a722e1f021","visdat":{"52a722e1f021":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
 
 
 
